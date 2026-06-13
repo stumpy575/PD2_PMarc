@@ -1,29 +1,77 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+window.addEventListener("DOMContentLoaded", () => {
+    const addTaskBtn = document.getElementById("addTaskBtn");
+    const taskInput  = document.getElementById("taskInput");
+    const taskList   = document.getElementById("taskList");
 
-// Wait for the deviceready event before using any of Cordova's device APIs.
-// See https://cordova.apache.org/docs/en/latest/cordova/events/events.html#deviceready
-document.addEventListener('deviceready', onDeviceReady, false);
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    displayTasks();
 
-function onDeviceReady() {
-    // Cordova is now initialized. Have fun!
+    function addTask() {
+        const text = taskInput.value.trim();
+        if (text === "") {
+            alert("Please enter text before adding a task.");
+            return;
+        }
+        tasks.push({ text, completed: false });
+        saveTasks();
+        displayTasks();
+        taskInput.value = "";
+        taskInput.focus();
+    }
 
-    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
-    document.getElementById('deviceready').classList.add('ready');
-}
+    function displayTasks() {
+        taskList.innerHTML = "";
+        tasks.forEach((task, index) => {
+            const row = document.createElement("li");
+            row.classList.add("task-row");
+
+            const title = document.createElement("span");
+            title.textContent = task.text;
+            title.classList.add("task-title");
+
+            const actions = document.createElement("div");
+            actions.classList.add("task-controls");
+
+            const editBtn = document.createElement("button");
+            editBtn.textContent = "Edit";
+            editBtn.classList.add("modify-btn");
+            editBtn.addEventListener("click", () => modifyTask(index));
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete";
+            deleteBtn.classList.add("remove-btn");
+            deleteBtn.addEventListener("click", () => removeTask(index));
+
+            actions.appendChild(editBtn);
+            actions.appendChild(deleteBtn);
+            row.appendChild(title);
+            row.appendChild(actions);
+            taskList.appendChild(row);
+        });
+    }
+
+    function modifyTask(index) {
+        const updated = prompt("Edit task:", tasks[index].text);
+        if (updated !== null && updated.trim() !== "") {
+            tasks[index].text = updated.trim();
+            saveTasks();
+            displayTasks();
+        }
+    }
+
+    function removeTask(index) {
+        tasks.splice(index, 1);
+        saveTasks();
+        displayTasks();
+    }
+
+    function saveTasks() {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    addTaskBtn.addEventListener("click", addTask);
+
+    taskInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") addTask();
+    });
+});
